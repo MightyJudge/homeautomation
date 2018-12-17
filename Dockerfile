@@ -1,7 +1,7 @@
-FROM arm32v7/node
+FROM arm64v8/node
 WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
 COPY . .
-EXPOSE 3000
+EXPOSE 8080 3000doc
 CMD [ "npm", "start" ]
