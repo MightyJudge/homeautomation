@@ -1,0 +1,14 @@
+{
+	"tv":{
+		"ip":"192.168.1.149",
+		"mac":"78:5D:C8:98:72:F7",
+		"key":"45d9caf4ad2c3424fa3b84748b73ab12"
+	},
+	"sky":{
+		"ip":"192.168.1.93"
+	},
+	"lightwave":{
+		"email":"mdjudge@gmail.com",
+		"password":"Emma1404!"
+	}
+}
