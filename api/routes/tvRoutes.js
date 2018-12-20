@@ -23,7 +23,7 @@ module.exports = function (app) {
 			return res.status(500).send({result:"failed"});
 		}
 	});
-	app.get('/api/a',(req,res) => {
+	app.get('/api/test',(req,res) => {
 		try {
 			console.log("power off");
 			tv.powerOff();
