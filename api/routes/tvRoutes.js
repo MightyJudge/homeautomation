@@ -14,7 +14,7 @@ module.exports = function (app) {
 	// #endregion
 
 	// #region Power
-	app.get('/tv/power/off',(req,res) => {
+	app.get('/api/tv/power/off',(req,res) => {
 		try {
 			console.log("power off");
 			tv.powerOff();
@@ -23,7 +23,7 @@ module.exports = function (app) {
 			return res.status(500).send({result:"failed"});
 		}
 	});
-	app.get('/a',(req,res) => {
+	app.get('/api/a',(req,res) => {
 		try {
 			console.log("power off");
 			tv.powerOff();
@@ -33,7 +33,7 @@ module.exports = function (app) {
 		}
 	});
 	
-		app.get('/tv/power/on',(req,res) => {
+		app.get('/api/tv/power/on',(req,res) => {
 		try {
 			console.log("power on");
 			tv.powerOn();
@@ -42,7 +42,7 @@ module.exports = function (app) {
 			return res.status(500).send({result:"failed"});
 		}
 	});
-	app.get('/xbox/power/on',(req,res) => {
+	app.get('/api/xbox/power/on',(req,res) => {
 		try {
 			console.log("power on");
 			tv.powerOnXbox();
@@ -53,7 +53,7 @@ module.exports = function (app) {
 	});
 	// #endregion
 	
-	app.post('/tv/message',(req,res) => {
+	app.post('/api/tv/message',(req,res) => {
 		try {
 			tv.toast(req,res);
 			return res.status(200).send({result:"ok"});
@@ -62,7 +62,7 @@ module.exports = function (app) {
 		}
 	});
 
-	app.get('/tv/channel/:channel',(req,res) => {
+	app.get('/api/tv/channel/:channel',(req,res) => {
 		console.log("Change channel");
 		try {
 			tv.channel(req,res);
