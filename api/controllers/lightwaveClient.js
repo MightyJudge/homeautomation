@@ -4,6 +4,7 @@ var WebSocket = require('ws');
 var https = require('https');
 var util = require('util');
 const uuidv4 = require('uuid/v4');
+var cuid = require('cuid');
 
 var config = require('../../config/config.json');
 var Client = function () {
@@ -63,7 +64,14 @@ Client.prototype.connect = function (cb) {
         var message = JSON.parse(data);
 
         var request = message.transactionId ? this.requests[message.transactionId] : null;
-        
+        if (message.direction === "notification") {
+            if(message.operation=="event"&&message.class=="feature"){
+                var feature = message.items[0].payload._feature.featureId;
+                var value = message.items[0].payload.value;
+                this.updateFeature(feature,value);
+                this.emit('updateRecieved',{"type":"FeatureUpdate","featureId":feature,"value":value});
+            }
+        }
         if (message.direction === "response") {
             if (request) {
                 if (request.callback && typeof request.callback === "function") {
@@ -71,10 +79,23 @@ Client.prototype.connect = function (cb) {
                 }
 
             }
-        } if (message.direction === "response" && message.operation=="authenticate") {
-            this.emit('connected');
+            if (message.operation=="authenticate") {
+                this.emit('connected');
+            }
+            if(message.operation=="read"){
+                    if(message.class=="feature"){
+                            console.log("got feature");
+                            var feature = message.items[0].payload._feature.featureId;
+                            var value = message.items[0].payload.value;
+                            this.updateFeature(feature,value);
+                            
+                    }
+
+            }
         }
+
     }.bind(this));
+    
 
     this.ws.on('error', function (err) {
         this.emit('error', err);
@@ -83,7 +104,34 @@ Client.prototype.connect = function (cb) {
     this.ws.on('close', function () {
         this.emit('close', 'connection closed');
     }.bind(this));
+    Client.prototype.findFeature = function(feature,haystack,cb){
+        if(haystack !== null){
+            if(Array.isArray(haystack)){
+                for(var i =0;i<heystack.lengh;i++){
+                    this.findFeature(feature,haystack[i],cb);
+                }
+            }else if(typeof haystack ==='object'){
+                for (var property in haystack) {
+                    if (!property.startsWith("__") && haystack.hasOwnProperty(property)) {
+                        this.findFeature(feature,haystack[property],cb);
+                    }
+                }
+                if(haystack.hasOwnProperty('id')){
+                    if(feature=='all' || haystack['id']==feature){
+                        cb(haystack);
+                    }
+                }
+            }
+        }
 
+    }.bind(this);
+
+    Client.prototype.updateFeature = function(feature,value){
+
+
+        console.log("update feature "+feature +" to "+value);
+        this.findFeature(feature,this.devices,function(f){f.value=value;})
+    }.bind(this);
 Client.prototype.getAuthToken = function(){
     var post_data = JSON.stringify({
         "email":config.lightwave.email,
@@ -109,6 +157,12 @@ Client.prototype.getAuthToken = function(){
     });
     post_req.write(post_data);
     post_req.end();
+}.bind(this);
+Client.prototype.featureRead = function(feature){
+    console.log("Read feature "+feature);
+    var msg = {"version":1,"senderId":this.sessionId,"class":"feature","direction":"request","operation":"read","transactionId":1,"items":[{"itemId":cuid(),"payload":{"featureId":feature}}]};
+    this.send(msg,function(){});
+
 }.bind(this);
 Client.prototype.gotAuthToken = function(chunk){
 
@@ -136,7 +190,7 @@ Client.prototype.gotAuthToken = function(chunk){
              },this.getUserInfo);
     }.bind(this);
     Client.prototype.getHierarchy = function(groupId,cb){
-       var msg = {"version":1,"senderId":this.senderID,"class":"group","direction":"request","operation":"hierarchy","transactionId":1,"items":[{"itemId":"cjpmhy60100043b64680k8g0l","payload":{"groupId":groupId}}]}
+       var msg = {"version":1,"senderId":this.senderID,"class":"group","direction":"request","operation":"hierarchy","transactionId":1,"items":[{"itemId":cuid(),"payload":{"groupId":groupId}}]}
        this.Send(msg,cb);
     }.bind(this);
 Client.prototype.send = function (obj,cb) {
@@ -152,11 +206,11 @@ Client.prototype.send = function (obj,cb) {
 	}
 }.bind(this);
 Client.prototype.switch = function(device,on,cb){
-    var msg = {"version":1,"senderId":this.senderId,"class":"feature","direction":"request","operation":"write","transactionId":1,"items":[{"itemId":"cjpfdtjmk00313b64li1xxlfa","payload":{"featureId":device,"value":on}}]}
+    var msg = {"version":1,"senderId":this.senderId,"class":"feature","direction":"request","operation":"write","transactionId":1,"items":[{"itemId":cuid(),"payload":{"featureId":device,"value":on}}]}
     this.Send(msg,function(){cb();});
 }.bind(this);
 Client.prototype.getUserInfo = function(){
-    var msg = {"version":1,"senderId":this.senderId,"class":"user","direction":"request","operation":"read","transactionId":1,"items":[{"itemId":"cjpeg9gfz00303b684e2cqg02","payload":{}}]};
+    var msg = {"version":1,"senderId":this.senderId,"class":"user","direction":"request","operation":"read","transactionId":1,"items":[{"itemId":cuid(),"payload":{}}]};
     this.Send(msg,function(m){
             this.rootGroupIds = m.items[0].payload.rootGroupIds;
             console.log("GROUP ID's: "+ this.rootGroupIds);
@@ -177,7 +231,7 @@ Client.prototype.gotHierarchy = function(groups){
         for(var x=0;x<f.features.length;x++){
             if(this.features.hasOwnProperty(f.features[x])){
                 var feat = this.features[f.features[x]];
-                d[feat.type] = {"id":f.features[x],value:""};
+                d[feat.type] = {"id":f.features[x],value:3};
                 validfeatures++;
             }
         }
@@ -187,7 +241,23 @@ Client.prototype.gotHierarchy = function(groups){
     }
     this.featureSet = obj;
     this.devices = ds;
+    this.readAllFeatures();
     console.log("gotHierarchy");
+}.bind(this);
+Client.prototype.readAllFeatures = function(){
+    for (var property in this.devices) {
+        var device = this.devices[property];
+        if(device.hasOwnProperty("switch")){
+            this.featureRead(device.switch.id);
+        }
+        if(device.hasOwnProperty("dimLevel")){
+            this.featureRead(device.dimLevel.id);
+        }
+    }
+    
+}.bind(this);
+Client.prototype.foundFeatureToRead = function(f){
+    
 }.bind(this);
 Client.prototype.getDevicesInGroups = function(groups){
     for(var i=0;i<groups.length;i++){
@@ -195,7 +265,7 @@ Client.prototype.getDevicesInGroups = function(groups){
     }
 }.bind(this);
 Client.prototype.getDevicesInGroup = function(group,cb){
-    var msg = {"version":1,"senderId":this.senderId,"class":"group","direction":"request","operation":"read","transactionId":1,"items":[{"itemId":"cjpekflrs002y3b64i4f80xf1","payload":{"groupId":group,"features":1,"subgroups":true,"subgroupDepth":10,"blocks":true,"scripts":true,"devices":1}}]}
+    var msg = {"version":1,"senderId":this.senderId,"class":"group","direction":"request","operation":"read","transactionId":1,"items":[{"itemId":cuid(),"payload":{"groupId":group,"features":1,"subgroups":true,"subgroupDepth":10,"blocks":true,"scripts":true,"devices":1}}]}
     this.Send(msg,this.recievedDeviceInfo);
 }.bind(this);
 
@@ -211,6 +281,7 @@ Client.prototype.recievedDeviceInfo = function (msg) {
             var type = feature.attributes.type;
             if(type=="switch"||type=="dimLevel"){
                 f[feature.featureId] = {"featureId":feature.featureId,"type":type};
+                
             }
         }
     }

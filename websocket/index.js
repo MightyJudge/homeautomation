@@ -3,8 +3,16 @@ module.exports = function (lwClient,server) {
 const WebSocket = require('ws');
  
 const wss = new WebSocket.Server({"server":server});
- 
-
+wss.broadcast = function broadcast(data) {
+    wss.clients.forEach(function each(client) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
+    });
+  };
+lwClient.on('updateRecieved',function update(data){
+   wss.broadcast(JSON.stringify(data));
+});
 wss.on('connection', function connection(ws) {
     console.log("New WS Connection");
   ws.on('message', function incoming(message) {

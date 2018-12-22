@@ -89,6 +89,11 @@ exports.audio = function(req,res) {
             }
             
         });
+        var remoteControl = new SkyRemote('192.168.1.93');
+        //ensure the sky box is on by pressing the sky button, then turn if off by pressing the power button
+        //if we just pressed the power button if would turn it on if it was already off
+        
+        remoteControl.press("sky",function(err){if(err){}else{remoteControl.press("power")}});
     }
 
 exports.powerOnXbox = function(req, res) {
@@ -146,7 +151,7 @@ exports.powerOn = function(req, res) {
         });
     
         var remoteControl = new SkyRemote('192.168.1.93');
-        remoteControl.press("power");
+        remoteControl.press("sky");
     
         //change the tv input to sky
         var client = new Client();

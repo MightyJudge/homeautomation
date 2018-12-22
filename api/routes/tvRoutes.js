@@ -3,7 +3,7 @@ module.exports = function (app) {
 	
 	// #region Audio
 	var tv = require('../controllers/tvController');
-	app.get('/tv/audio/:action',(req,res) => {
+	app.get('/api/tv/audio/:action',(req,res) => {
 		try {
 			tv.audio(req,res);
 			return res.status(200).send({result:"ok"});
