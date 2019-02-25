@@ -41,46 +41,9 @@ app.get('*', function(req, res, next) {
    res.sendFile(__dirname + '/dashboard/index.html');
 });
 var server={};
-if(fs.existsSync("../config/certs/")){
-  console.log("found certs folder, will use ssl");
- server = require('greenlock-express').create({
- 
-  // Let's Encrypt v2 is ACME draft 11
-  version: 'draft-11'
- 
-  // Note: If at first you don't succeed, switch to staging to debug
-  // https://acme-staging-v02.api.letsencrypt.org/directory
-, server: 'https://acme-v02.api.letsencrypt.org/directory'
- 
-  // Where the certs will be saved, MUST have write access
-, configDir: '../config/certs/'
- 
-  // You MUST change this to a valid email address
-, email: 'mdjudge@gmail.com'
- 
-  // You MUST change these to valid domains
-  // NOTE: all domains will validated and listed on the certificate
-, approvedDomains: ['drive.markjudge.co.uk' ]
- 
-  // You MUST NOT build clients that accept the ToS without asking the user
-, agreeTos: true
- 
-, app: app
- 
-  // Join the community to get notified of important updates
-, communityMember: true
- 
-  // Contribute telemetry data to the project
-, telemetry: true
- 
-//, debug: true
- 
-}).listen(80, 443);
-}else{
-  console.log("Couldn't find certs folder, won't use ssl")
-  //Local dev, none ssl
+
   server = app.listen(80);
-}
+
 console.log('Home automation server started on: ' + port);
 
 
