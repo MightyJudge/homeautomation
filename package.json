@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^1.5.19"
+    "nodemon": "^1.5.19",
+    "webpack": "^1.13.2"
   },
   "dependencies": {
     "cuid": "^2.1.4",
