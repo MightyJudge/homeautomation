@@ -3,7 +3,12 @@ var wol = require('wake_on_lan');
 var config = require('../../config/config.json');
 var Client = require('./tvClient').Client;
 var SkyRemote = require('sky-remote');
+const SkyQ = require('sky-q');
 
+const ip_address = '192.168.0.21';
+//Living Room 192.168.0.21
+//bedroom 192.168.0.25
+const box = new SkyQ({ip:ip_address})
 
 function openBrowserOnTV(ip, url, cb) {
     var client = new Client();
@@ -83,17 +88,31 @@ exports.audio = function(req,res) {
 	var ip = config.tv.ip;
 	turnPowerOff(ip, function done (err) {
             if (err) {
-                console.log("toogle must failed: " + JSON.stringify(err));
+                console.log("toogle power failed: " + JSON.stringify(err));
             } else {
-                console.log("toggle mute successful");
+                console.log("toggle power successful");
             }
             
         });
-        var remoteControl = new SkyRemote('192.168.1.93');
+
+        box.getPowerState().then(isOn=>{
+        if (isOn) {
+            console.log("The sky box is on, let's turn it off")
+            var remoteControl = new SkyRemote(ip_address);
+            remoteControl.press("power");
+        } else {
+            console.log("The sky box is already off")
+        }
+        }).catch(err=>{
+        console.error("Unable to determine power state")
+        console.error("Perhaps looking at this error will help you figure out why", err)
+        })
+
+        
         //ensure the sky box is on by pressing the sky button, then turn if off by pressing the power button
         //if we just pressed the power button if would turn it on if it was already off
         
-        remoteControl.press("sky",function(err){if(err){}else{remoteControl.press("power")}});
+        
     }
 
 exports.powerOnXbox = function(req, res) {
@@ -150,7 +169,7 @@ exports.powerOn = function(req, res) {
             }
         });
     
-        var remoteControl = new SkyRemote('192.168.1.93');
+        var remoteControl = new SkyRemote(ip_address);
         remoteControl.press("sky");
     
         //change the tv input to sky
@@ -171,7 +190,7 @@ exports.powerOn = function(req, res) {
 
 
         exports.channel = function(req,res) {
-            var remoteControl = new SkyRemote('192.168.1.93');
+            var remoteControl = new SkyRemote(ip_address);
             var channel = req.params.channel;
             // Simple - just send a command
             var buttons = [];

@@ -21,6 +21,7 @@
     "le-acme-core": "^2.1.4",
     "node-wol": "^0.1.1",
     "sky-remote": "^1.2.0",
+    "sky-q": "^1.0.0",
     "util": "^0.11.1",
     "uuid": "^3.3.2",
     "wake_on_lan": "^1.0.0",
